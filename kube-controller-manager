@@ -1,0 +1,7 @@
+## default config file for kube-controller-manager
+## location /etc/default/kube-controller-manager
+
+export KUBERNETES_EXECUTABLE_LOCATION=/usr/bin
+
+KUBE_CONTROLLER_MANAGER=$KUBERNETES_EXECUTABLE_LOCATION/kube-controller-manager
+KUBE_CONTROLLER_MANAGER_OPTS="--address=0.0.0.0 --master=127.0.0.1:8080 --v=0 "

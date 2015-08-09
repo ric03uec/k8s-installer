@@ -1,0 +1,6 @@
+#kube-scheduler config
+
+export KUBERNETES_EXECUTABLE_LOCATION=/usr/bin
+
+KUBE_SCHEDULER=$KUBERNETES_EXECUTABLE_LOCATION/kube-scheduler
+KUBE_SCHEDULER_OPTS="--address=0.0.0.0 --master=127.0.0.1:8080 --v=0 "

@@ -13,15 +13,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     master.vm.hostname = "kube-master"
   end
 
-  config.vm.define "kube-slave1" do |slave|
-    slave.vm.box = "trusty64"
-    slave.vm.network "private_network", ip: "192.168.33.11"
-    slave.vm.hostname = "kube-slave1"
-  end
+#  config.vm.define "kube-slave1" do |slave|
+#    slave.vm.box = "trusty64"
+#    slave.vm.network "private_network", ip: "192.168.33.11"
+#    slave.vm.hostname = "kube-slave1"
+#  end
   
-  config.vm.define "kube-slave2" do |slave|
-    slave.vm.box = "trusty64"
-    slave.vm.network "private_network", ip: "192.168.33.11"
-    slave.vm.hostname = "kube-slave2"
-  end
+#  config.vm.define "kube-slave2" do |slave|
+#    slave.vm.box = "trusty64"
+#    slave.vm.network "private_network", ip: "192.168.33.12"
+#    slave.vm.hostname = "kube-slave2"
+#  end
 end

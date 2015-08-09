@@ -1,0 +1,5 @@
+#etcd config
+
+export ETCD_EXECUTABLE_LOCATION=/usr/bin
+export ETCD=$ETCD_EXECUTABLE_LOCATION/etcd
+ETCD_OPTS='--listen-client-urls=http://0.0.0.0:4001 --data-dir=/etcd --advertise-client-urls=http://0.0.0.0:4001'
