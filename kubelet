@@ -1,0 +1,8 @@
+## default config file for kubelet
+## location [slave] /etc/default/kubelet
+
+export KUBERNETES_EXECUTABLE_LOCATION=/usr/bin
+
+# Add more envionrment settings used by kubelet here
+KUBELET=$KUBERNETES_EXECUTABLE_LOCATION/kubelet
+KUBELET_OPTS="--address=0.0.0.0 --port=10250 --max-pods=75 --docker_root=/data --config=/etc/kubernetes/manifests --hostname_override=slave-<%= scriptData.clusterModel.id %>-<%= scriptData.slaveNodeModel.id %> --api_servers=http://master-<%= scriptData.clusterModel.id %>-<%= scriptData.masterNodeModel.id %>:8080 --enable_server=true --logtostderr=true --v=0 --maximum-dead-containers=10"

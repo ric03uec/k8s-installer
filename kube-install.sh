@@ -61,7 +61,10 @@ export KUBERNETES_RELEASE_VERSION=v1.0.1
 export ETCD_VERSION=v2.0.5
 export DEFAULT_CONFIG_PATH=/etc/default
 export ETCD_EXECUTABLE_LOCATION=/usr/bin
+export FLANNEL_EXECUTABLE_LOCATION=/usr/bin
 export ETCD_PORT=4001
+export FLANNEL_VERSION=0.5.2
+export DOCKER_VERSION=1.6.2
 export KUBERNETES_CLUSTER_ID=k8sCluster
 export KUBERNETES_DOWNLOAD_PATH=/tmp
 export KUBERNETES_EXTRACT_DIR=$KUBERNETES_DOWNLOAD_PATH/kubernetes
@@ -102,17 +105,13 @@ install_etcd() {
 }
 
 install_docker() {
-  echo "installing docker .........."
-  docker_path=$(which docker);
-  if [[ -z "$docker_path" ]]; then
-    sudo apt-get install -y linux-image-extra-`uname -r`
-    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
-    sudo sh -c "echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list"
-    sudo apt-get update
-    sudo apt-get install -y lxc-docker
-  else
-    echo "Docker already installed,skipping..."
-  fi
+  echo "Installing docker version $DOCKER_VERSION ..."
+  sudo apt-get -yy update
+  echo "deb http://get.docker.com/ubuntu docker main" | sudo tee /etc/apt/sources.list.d/docker.list
+  sudo apt-key adv --keyserver pgp.mit.edu --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+  sudo apt-get -yy update
+  sudo apt-get -o Dpkg::Options::='--force-confnew' -yy install lxc-docker-$DOCKER_VERSION
+  sudo service docker stop || true
 }
 
 install_prereqs() {
@@ -138,19 +137,10 @@ download_flannel_release() {
   sudo mv -v flanneld $FLANNEL_EXECUTABLE_LOCATION/flanneld;
 }
 
-update_flanneld_config() {
-  echo 'updating flanneld config'
-  echo "FLANNELD_OPTS='-etcd-endpoints=http://$MASTER_IP:$ETCD_PORT -iface=$SLAVE_IP -ip-masq=true'" | sudo tee -a /etc/default/flanneld
-}
-
 update_hosts() {
   echo "Updating /etc/hosts..."
-  if [[ $INSTALLER_TYPE == 'master' ]]; then
-    echo "updating /etc/hosts to add master IP entry"
-    echo "$MASTER_IP $KUBERNETES_MASTER_HOSTNAME" | sudo tee -a /etc/hosts
-  else
-    echo "$SLAVE_IP $KUBERNETES_SLAVE_HOSTNAME" | sudo tee -a /etc/hosts
-  fi
+  echo "$MASTER_IP $KUBERNETES_MASTER_HOSTNAME" | sudo tee -a /etc/hosts
+  echo "$SLAVE_IP $KUBERNETES_SLAVE_HOSTNAME" | sudo tee -a /etc/hosts
   cat /etc/hosts
 }
 
@@ -205,20 +195,29 @@ copy_master_configs() {
 }
 
 copy_slave_binaries() {
-  true
+  echo "Copying binary files for slave components"
+  sudo cp -vr $KUBERNETES_SERVER_BIN_DIR/kubelet $KUBERNETES_EXECUTABLE_LOCATION/
+  sudo cp -vr $KUBERNETES_SERVER_BIN_DIR/kube-proxy $KUBERNETES_EXECUTABLE_LOCATION/
 }
 
-copy_slave_configs() {
+update_slave_configs() {
+  sudo cp -vr $SCRIPT_DIR/flanneld.conf /etc/init/flanneld.conf
+  echo "FLANNELD_OPTS='-etcd-endpoints=http://$MASTER_IP:$ETCD_PORT -iface=$SLAVE_IP -ip-masq=true'" | sudo tee -a /etc/default/flanneld
+
+  sudo cp -vr $SCRIPT_DIR/docker.conf /etc/init/docker.conf
+  sudo cp -vr $SCRIPT_DIR/docker /etc/default/docker
+
   # update kubelet config
+  sudo cp -vr $SCRIPT_DIR/kubelet.conf /etc/init/kubelet.conf
+  echo "export KUBERNETES_EXECUTABLE_LOCATION=/usr/bin" | sudo tee -a /etc/default/kubelet
   echo "KUBELET=$KUBERNETES_EXECUTABLE_LOCATION/kubelet" | sudo tee -a /etc/default/kubelet
-  echo "KUBELET_OPTS=\"--address=0.0.0.0 --port=10250 --hostname_override=$KUBERNETES_SLAVE_HOSTNAME --api_servers=http://$KUBERNETES_MASTER_HOSTNAME:8080 --etcd_servers=http://$KUBERNETES_MASTER_HOSTNAME:4001 --enable_server=true --logtostderr=true --v=0\"" | sudo tee -a /etc/default/kubelet
-  echo "kubelet config updated successfully"
+  echo "KUBELET_OPTS='--address=0.0.0.0 --port=10250 --max-pods=75 --docker_root=/data --hostname_override=slave-$KUBERNETES_SLAVE_HOSTNAME --api_servers=http://$KUBERNETES_MASTER_HOSTNAME:8080 --enable_server=true --logtostderr=true --v=0 --maximum-dead-containers=10'" | sudo tee -a /etc/default/kubelet
 
   # update kube-proxy config
+  sudo cp -vr $SCRIPT_DIR/kube-proxy.conf /etc/init/kube-proxy.conf
   echo "KUBE_PROXY=$KUBERNETES_EXECUTABLE_LOCATION/kube-proxy" | sudo tee -a  /etc/default/kube-proxy
   echo -e "KUBE_PROXY_OPTS=\"--etcd_servers=http://$KUBERNETES_MASTER_HOSTNAME:4001 --master=$KUBERNETES_MASTER_HOSTNAME:8080 --logtostderr=true \"" | sudo tee -a /etc/default/kube-proxy
   echo "kube-proxy config updated successfully"
-
 }
 
 remove_redundant_config() {
@@ -282,6 +281,7 @@ start_services() {
     ## because the upstart scripts boot them up when etcd starts
   else
     echo 'Starting slave services...'
+    sudo service flanneld start
     sudo service kubelet start
     sudo service kube-proxy start
   fi
@@ -334,25 +334,19 @@ if [[ $INSTALLER_TYPE == 'slave' ]]; then
   install_docker
 
   trap before_exit EXIT
+  download_flannel_release
+
+  trap before_exit EXIT
   copy_slave_binaries
 
   trap before_exit EXIT
-  copy_slave_configs
+  update_slave_configs
 
   trap before_exit EXIT
   install_prereqs
 
   trap before_exit EXIT
   clear_network_entities
-
-  trap before_exit EXIT
-  download_flannel_release
-
-  trap before_exit EXIT
-  update_flanneld_config
-
-  trap before_exit EXIT
-  update_slave_config
 
 else
   trap before_exit EXIT
