@@ -33,5 +33,7 @@ Future work for which suggestions/PRs are welcome
 Complete:
 ---
 - first version of master and slave installation
+- tested to be working with 3 vagrant nodes k8s cluster
+- tested to be working with 3 Digital Ocean nodes k8s cluster
 - `flannel` used as overlay network
 - can be used to bring up a multi-node kubernetes cluster for ubuntu 14.04 nodes
