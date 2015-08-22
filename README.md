@@ -1,2 +1,37 @@
 # k8s-installer
-zero addon kubernetes installer
+
+Usage:
+---
+
+```
+Usage:
+  ./kube-installer.sh
+
+  Options:
+    --master <master ip address>                       Install kube master with provided IP
+    --slave  <slave ip address> <master ip address>    Install kube slave with provided IP
+```
+
+Objectives:
+---
+- provide a pure `bash` based installer to install kubernetes on custom nodes
+- easily upgradable cluster
+- declarative cluster configuration
+
+TODO:
+---
+Future work for which suggestions/PRs are welcome
+- move master components into containers
+- download only the required binaries instead of complete k8s tar archive
+- use certs for TLS between master-node
+- use tokens for authorization of node components
+- use json config for providing a declarative installation
+- make cluster easily upgradable
+- post installation cleanup
+- support more OS's and systemd installations
+
+Complete:
+---
+- first version of master and slave installation
+- `flannel` used as overlay network
+- can be used to bring up a multi-node kubernetes cluster for ubuntu 14.04 nodes
