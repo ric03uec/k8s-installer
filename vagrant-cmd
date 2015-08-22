@@ -1,9 +1,0 @@
-[terminal 1] $ cd /home/kube
-[terminal-1] $ vagrant box add https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box --name trusty64
-[terminal-1] $ vagrant up kube-master
-[terminal-1] $ vagrant ssh kube-master
-[terminal-1] $ ./kube-install.sh master
-
-[terminal-2] $ vagrant up kube-slave
-[terminal-2] $ vagrant ssh kube-slave
-[terminal-2] $ ./kube-install.sh slave

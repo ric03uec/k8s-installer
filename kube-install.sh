@@ -1,18 +1,4 @@
 #!/bin/bash -e
-#
-# Copyright 2015 Shippable Inc. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 print_help() {
   echo "Usage: 
@@ -182,17 +168,17 @@ copy_master_binaries() {
 
 copy_master_configs() {
   echo "Copying 'default' files for master components"
-  sudo cp -vr $SCRIPT_DIR/etcd.conf /etc/init/etcd.conf
-  sudo cp -vr $SCRIPT_DIR/etcd /etc/default/etcd
+  sudo cp -vr $SCRIPT_DIR/config/thirdparty/etcd.conf /etc/init/etcd.conf
+  sudo cp -vr $SCRIPT_DIR/config/thirdparty/etcd /etc/default/etcd
 
-  sudo cp -vr $SCRIPT_DIR/kube-apiserver.conf /etc/init/kube-apiserver.conf
-  sudo cp -vr $SCRIPT_DIR/kube-apiserver /etc/default/kube-apiserver
+  sudo cp -vr $SCRIPT_DIR/config/k8s/kube-apiserver.conf /etc/init/kube-apiserver.conf
+  sudo cp -vr $SCRIPT_DIR/config/k8s/kube-apiserver /etc/default/kube-apiserver
 
-  sudo cp -vr $SCRIPT_DIR/kube-scheduler.conf /etc/init/kube-scheduler.conf
-  sudo cp -vr $SCRIPT_DIR/kube-scheduler /etc/default/kube-scheduler
+  sudo cp -vr $SCRIPT_DIR/config/k8s/kube-scheduler.conf /etc/init/kube-scheduler.conf
+  sudo cp -vr $SCRIPT_DIR/config/k8s/kube-scheduler /etc/default/kube-scheduler
 
-  sudo cp -vr $SCRIPT_DIR/kube-controller-manager.conf /etc/init/kube-controller-manager.conf
-  sudo cp -vr $SCRIPT_DIR/kube-controller-manager /etc/default/kube-controller-manager
+  sudo cp -vr $SCRIPT_DIR/config/k8s/kube-controller-manager.conf /etc/init/kube-controller-manager.conf
+  sudo cp -vr $SCRIPT_DIR/config/k8s/kube-controller-manager /etc/default/kube-controller-manager
 }
 
 copy_slave_binaries() {
@@ -202,20 +188,20 @@ copy_slave_binaries() {
 }
 
 update_slave_configs() {
-  sudo cp -vr $SCRIPT_DIR/flanneld.conf /etc/init/flanneld.conf
+  sudo cp -vr $SCRIPT_DIR/config/thirdparty/flanneld.conf /etc/init/flanneld.conf
   echo "FLANNELD_OPTS='-etcd-endpoints=http://$MASTER_IP:$ETCD_PORT -iface=$SLAVE_IP -ip-masq=true'" | sudo tee -a /etc/default/flanneld
 
-  sudo cp -vr $SCRIPT_DIR/docker.conf /etc/init/docker.conf
-  sudo cp -vr $SCRIPT_DIR/docker /etc/default/docker
+  sudo cp -vr $SCRIPT_DIR/config/thirdparty/docker.conf /etc/init/docker.conf
+  sudo cp -vr $SCRIPT_DIR/config/thirdparty/docker /etc/default/docker
 
   # update kubelet config
-  sudo cp -vr $SCRIPT_DIR/kubelet.conf /etc/init/kubelet.conf
+  sudo cp -vr $SCRIPT_DIR/config/k8s/kubelet.conf /etc/init/kubelet.conf
   echo "export KUBERNETES_EXECUTABLE_LOCATION=/usr/bin" | sudo tee -a /etc/default/kubelet
   echo "KUBELET=$KUBERNETES_EXECUTABLE_LOCATION/kubelet" | sudo tee -a /etc/default/kubelet
   echo "KUBELET_OPTS='--address=0.0.0.0 --port=10250 --max-pods=75 --docker_root=/data --hostname_override=$KUBERNETES_SLAVE_HOSTNAME --api_servers=http://$KUBERNETES_MASTER_HOSTNAME:8080 --enable_server=true --logtostderr=true --v=0 --maximum-dead-containers=10'" | sudo tee -a /etc/default/kubelet
 
   # update kube-proxy config
-  sudo cp -vr $SCRIPT_DIR/kube-proxy.conf /etc/init/kube-proxy.conf
+  sudo cp -vr $SCRIPT_DIR/config/k8s/kube-proxy.conf /etc/init/kube-proxy.conf
   echo "KUBE_PROXY=$KUBERNETES_EXECUTABLE_LOCATION/kube-proxy" | sudo tee -a  /etc/default/kube-proxy
   echo -e "KUBE_PROXY_OPTS='--master=$KUBERNETES_MASTER_HOSTNAME:8080 --logtostderr=true'" | sudo tee -a /etc/default/kube-proxy
   echo "kube-proxy config updated successfully"
