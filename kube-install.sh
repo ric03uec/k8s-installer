@@ -276,14 +276,14 @@ start_services() {
 
 update_flanneld_subnet() {
   ## update the key in etcd which determines the subnet that flannel uses
-  exec_cmd "echo 'Waiting for 5 seconds for etcd to start'"
+  echo 'Waiting for 5 seconds for etcd to start'
   sleep 5
   $ETCD_EXECUTABLE_LOCATION/etcdctl --peers=http://$MASTER_IP:$ETCD_PORT set coreos.com/network/config '{"Network":"'"$FLANNEL_SUBNET"'"}'
   ret=$?
   if [ $ret == 0 ]; then
-    exec_cmd "echo 'Updated flanneld subnet in etcd'"
+    echo 'Updated flanneld subnet in etcd'
   else
-    exec_cmd "echo 'Failed to flanneld subnet in etcd'"
+    echo 'Failed to flanneld subnet in etcd'
   fi  
 }
 
