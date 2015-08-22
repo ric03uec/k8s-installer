@@ -11,5 +11,4 @@
 # This is also a handy place to tweak where Docker's temporary files go.
 #export TMPDIR="/mnt/bigdrive/docker-tmp"
 DOCKER_OPTS="--dns 8.8.8.8 --dns 8.8.4.4"
-DOCKER_OPTS="$DOCKER_OPTS -H unix:///var/run/docker.sock -g=/data --storage-driver aufs"
-
+DOCKER_OPTS="$DOCKER_OPTS -H unix:///var/run/docker.sock -g=/data"

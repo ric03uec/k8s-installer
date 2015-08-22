@@ -63,6 +63,7 @@ export DEFAULT_CONFIG_PATH=/etc/default
 export ETCD_EXECUTABLE_LOCATION=/usr/bin
 export FLANNEL_EXECUTABLE_LOCATION=/usr/bin
 export ETCD_PORT=4001
+export FLANNEL_SUBNET=10.100.0.0/16
 export FLANNEL_VERSION=0.5.2
 export DOCKER_VERSION=1.6.2
 export KUBERNETES_CLUSTER_ID=k8sCluster
@@ -211,7 +212,7 @@ update_slave_configs() {
   sudo cp -vr $SCRIPT_DIR/kubelet.conf /etc/init/kubelet.conf
   echo "export KUBERNETES_EXECUTABLE_LOCATION=/usr/bin" | sudo tee -a /etc/default/kubelet
   echo "KUBELET=$KUBERNETES_EXECUTABLE_LOCATION/kubelet" | sudo tee -a /etc/default/kubelet
-  echo "KUBELET_OPTS='--address=0.0.0.0 --port=10250 --max-pods=75 --docker_root=/data --hostname_override=slave-$KUBERNETES_SLAVE_HOSTNAME --api_servers=http://$KUBERNETES_MASTER_HOSTNAME:8080 --enable_server=true --logtostderr=true --v=0 --maximum-dead-containers=10'" | sudo tee -a /etc/default/kubelet
+  echo "KUBELET_OPTS='--address=0.0.0.0 --port=10250 --max-pods=75 --docker_root=/data --hostname_override=$KUBERNETES_SLAVE_HOSTNAME --api_servers=http://$KUBERNETES_MASTER_HOSTNAME:8080 --enable_server=true --logtostderr=true --v=0 --maximum-dead-containers=10'" | sudo tee -a /etc/default/kubelet
 
   # update kube-proxy config
   sudo cp -vr $SCRIPT_DIR/kube-proxy.conf /etc/init/kube-proxy.conf
@@ -285,6 +286,19 @@ start_services() {
     sudo service kubelet start
     sudo service kube-proxy start
   fi
+}
+
+update_flanneld_subnet() {
+  ## update the key in etcd which determines the subnet that flannel uses
+  exec_cmd "echo 'Waiting for 5 seconds for etcd to start'"
+  sleep 5
+  $ETCD_EXECUTABLE_LOCATION/etcdctl --peers=http://$MASTER_IP:$ETCD_PORT set coreos.com/network/config '{"Network":"'"$FLANNEL_SUBNET"'"}'
+  ret=$?
+  if [ $ret == 0 ]; then
+    exec_cmd "echo 'Updated flanneld subnet in etcd'"
+  else
+    exec_cmd "echo 'Failed to flanneld subnet in etcd'"
+  fi  
 }
 
 check_service_status() {
@@ -364,5 +378,9 @@ start_services
 
 trap before_exit EXIT
 check_service_status
+
+if [[ $INSTALLER_TYPE == 'master' ]]; then
+  update_flanneld_subnet
+fi
 
 echo "Kubernetes $INSTALLER_TYPE install completed"
